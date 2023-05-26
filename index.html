@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser.min.js"></script> 
+</head>
+<body>
+
+    <script>
+    const config = {
+        type: Phaser.AUTO,
+        parent: 'phaser-example',
+        width: 1000,
+        height: 600,
+        scene: {
+            preload: preloadStart,
+            create: createStart
+        },
+        physics: {
+            default: 'matter',
+            matter: {
+              gravity: { y: 2},
+                //debug: true
+            }
+        }
+    };
+
+    // Create the game instance
+    var game = new Phaser.Game(config);
+
+    // Preload assets for the starting screen
+    function preloadStart() {
+        this.load.image('play', 'assets/play.png');
+        this.load.image('marble', 'assets/marble2.png');
+        this.load.image('rollercoaster', 'assets/newfornow.png');
+        this.load.image('background', 'assets/white-background.png');
+        this.load.image('title', 'assets/title.png');
+    }
+
+    // Create the starting screen
+    function createStart() {
+        // Add the background image
+        var start_bg = this.add.image(0, 0, 'background');
+        start_bg.setOrigin(0,0);
+        start_bg.displayWidth = game.config.width;
+        start_bg.displayHeight = game.config.height;
+
+        // Add the title
+        var title = this.add.image(400, 200, 'title');
+        title.setOrigin(.5);
+        title.setScale(4);
+
+        // Add the play button
+        var playButton = this.add.image(400, 400, 'play').setInteractive();
+        playButton.on('pointerdown', function () {
+            // Remove the starting screen elements
+            title.destroy();
+            playButton.destroy();
+            start_bg.destroy();
+
+            // Switch to the running game scene
+            this.scene.remove('startScreen');
+            this.scene.add('runningGame', runningGame, true);
+        }, this);
+    }
+
+    var runningGame = new Phaser.Class({
+
+        Extends: Phaser.Scene,
+
+        initialize: function runningGame() {
+            Phaser.Scene.call(this, { key: 'runningGame' });
+            this.line;
+        },
+
+       
+            
+        preload: function() {
+            // Load assets for the running game
+            this.load.image('game-background', 'assets/white-background.png');
+            this.load.image('marble', 'assets/marble2.png');
+            this.load.json('rollercoasterBox', 'assets/rollercoasterBoxBetter.json');
+            this.load.image("rollercoaster", 'assets/newfornow.png')
+            this.load.image('text-1', 'assets/text-box-1.png')
+            this.load.image('text-2', 'assets/text-box-2.png')
+            this.load.image('text-3', 'assets/text-box-3.png')
+        },
+
+        create: function() {
+            
+            this.marbleInfoText = this.add.text(10, 10, '', {font: '16px Ariel', fill: '#ffffff' });
+
+            
+
+            // Add the game background image
+            this.bg = this.add.image(0, 0, 'game-background');
+            
+            this.bg.setOrigin(0, 0);
+            this.bg.displayWidth = game.config.width;
+            this.bg.displayHeight = game.config.height;
+            this.bgX = 0;
+            // Create a Matter.js world
+            this.matter.world.setBounds(0, 0, 1000, 600);
+
+            //Create the rollercoaster
+
+            var coasterShape = this.cache.json.get('rollercoasterBox');;
+
+            this.rollercoasterBox = this.matter.add.sprite(340, 505, 'rollercoaster', null, { shape: coasterShape});
+            console.log(this.rollercoasterBox.x, this.rollercoasterBox.y)
+            
+            
+
+            this.rollercoasterBox.setStatic(true);
+            this.rollercoasterBox.setScale(5.2, 3.0);
+
+
+
+
+
+            // Create a ball
+            this.ball = this.matter.add.sprite(20, 250  , 'marble');
+            this.ball.setScale(.18);
+            this.ball.setCircle(13);
+            this.ball.setFriction(0.005);
+            this.ball.setBounce(0.0);
+            this.ball.setVelocity(0, 10);
+            
+            this.line = this.add.graphics({ lineStyle: { width: 5, color: 0xff0000 } });
+
+            this.set = 1;
+            
+            this.startTime = this.time.now;
+          
+
+            
+
+            this.google = this.add.image(400, 400, 'text-1').setInteractive({ useHandCursor: true });
+            this.google.visible = false;
+            this.google.on('pointerdown', function () {
+                console.log('1 pointerdown event triggered');
+                this.ball.setStatic(false);
+                this.google.visible = false;
+                
+                
+                this.set += 1;
+                
+            },  this);
+
+            this.text2 = this.add.image(400, 400, 'text-2').setInteractive({ useHandCursor: true });
+            this.text2.visible = false;
+            this.text2.on('pointerdown', function () {
+                console.log('2 pointerdown event triggered');
+                this.ball.setStatic(false);
+                this.text2.visible = false;
+                console.log(this.set)
+                this.ball.setVelocity(23, 0);
+                console.log("why is this not working")
+                
+                if (this.set == 2) {
+                    this.ball.setVelocity(15, -20);
+                }
+                
+                this.set += 1;
+                
+            }, this);
+            
+
+            this.text3 = this.add.image(400, 400, 'text-3').setInteractive({ useHandCursor: true });
+            this.text3.visible = false;
+            this.text3.on('pointerdown', function () {
+                console.log('3 pointerdown event triggered');
+                this.ball.setStatic(false);
+                this.text3.visible = false;
+                
+                if (this.set == 4) {
+                    this.ball.setVelocity(10, 20);
+                }
+                
+                this.set += 1;
+                
+            }, this);
+            
+            
+        },
+
+        update: function() {
+            for (let i = 0; i < 100; i++) {
+                this.line.strokeLineShape({ x1: this.ball.x, y1: this.ball.y, x2: this.ball.x, y2: this.ball.y + 2 });
+            }
+            
+            console.log(this.ball.x, this.ball.y)
+            var elapsedTime = this.time.now - this.startTime;
+            if (this.ball.x > 20 && !this.google.visible && this.set == 1) {
+                this.ball.setStatic(true);
+                this.google.visible = true;
+                
+            }      
+
+            
+            if (this.ball.x >= 220 && this.set == 2) {
+                
+                this.ball.setVelocity(0, 0);
+                this.text2.visible = true;
+                this.ball.setStatic(true);
+                this.set += 1;
+            }
+
+            if (this.ball.x >= 650 && this.set == 4) {
+                
+                this.text3.visible = true;
+                this.ball.setStatic(true);
+                this.ball.setVelocity(15, 0);
+                this.set += 1;
+            }
+            
+                
+                //this.rollercoasterBox.x -= 20
+            
+
+            if (this.ball.x >= 840) {
+                
+                
+                
+                //this.rollercoasterBox.x -= 20
+            }
+            
+            this.marbleInfoText.setText('x: ' + this.ball.x.toFixed(2) + ', y: ' + this.ball.y.toFixed(2) + ', Velocity x: ' + this.ball.body.velocity.x.toFixed(2) + ', Velocity y: ' + this.ball.body.velocity.y.toFixed(2) + ', t: ' + (elapsedTime / 1000).toFixed(2));
+            this.marbleInfoText.setDepth(1);
+            this.marbleInfoText.setColor('red');
+        }
+    });
+    </script>
+
+</body>
+</html>
